@@ -29,6 +29,9 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      - name: Set lowercase owner name
+        run: echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -54,7 +57,7 @@ jobs:
         with:
           images: |
             ${{ secrets.DOCKER_USERNAME }}/yeti-agent
-            ghcr.io/${{ github.repository_owner }}/yeti-agent
+            ghcr.io/${{ env.OWNER_LC }}/yeti-agent
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -72,5 +75,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/yeti-agent:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/yeti-agent:buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/yeti-agent:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ env.OWNER_LC }}/yeti-agent:buildcache,mode=max
