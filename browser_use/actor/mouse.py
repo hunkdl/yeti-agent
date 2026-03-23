@@ -1,5 +1,7 @@
 """Mouse class for mouse operations."""
 
+import logging
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -7,6 +9,63 @@ if TYPE_CHECKING:
 	from cdp_use.cdp.input.types import MouseButton
 
 	from browser_use.browser.session import BrowserSession
+
+logger = logging.getLogger(__name__)
+
+# JavaScript to inject a visual cursor overlay into the page
+_VISUAL_CURSOR_JS = r"""
+(function() {
+  if (window.__yetiCursorActive) return;
+  window.__yetiCursorActive = true;
+
+  // Create cursor element
+  var cursor = document.createElement('div');
+  cursor.id = '__yeti-visual-cursor';
+  cursor.style.cssText = 'position:fixed;width:20px;height:20px;border-radius:50%;background:rgba(255,68,68,0.7);border:2px solid #ff4444;pointer-events:none;z-index:2147483647;transition:left 0.15s ease-out,top 0.15s ease-out;transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(255,68,68,0.5);display:none;';
+  document.body.appendChild(cursor);
+
+  // Create click ripple element
+  var ripple = document.createElement('div');
+  ripple.id = '__yeti-click-ripple';
+  ripple.style.cssText = 'position:fixed;width:40px;height:40px;border-radius:50%;border:3px solid #ff4444;pointer-events:none;z-index:2147483646;transform:translate(-50%,-50%);opacity:0;display:none;';
+  document.body.appendChild(ripple);
+
+  window.__yetiMoveCursor = function(x, y) {
+    cursor.style.display = 'block';
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
+  };
+
+  window.__yetiClickEffect = function(x, y) {
+    cursor.style.display = 'block';
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
+    // Pulse the cursor
+    cursor.style.background = 'rgba(255,255,0,0.9)';
+    cursor.style.width = '16px';
+    cursor.style.height = '16px';
+    setTimeout(function() {
+      cursor.style.background = 'rgba(255,68,68,0.7)';
+      cursor.style.width = '20px';
+      cursor.style.height = '20px';
+    }, 200);
+    // Show ripple
+    ripple.style.display = 'block';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    ripple.style.opacity = '1';
+    ripple.style.width = '20px';
+    ripple.style.height = '20px';
+    ripple.style.transition = 'none';
+    setTimeout(function() {
+      ripple.style.transition = 'all 0.4s ease-out';
+      ripple.style.width = '60px';
+      ripple.style.height = '60px';
+      ripple.style.opacity = '0';
+    }, 10);
+  };
+})();
+"""
 
 
 class Mouse:
@@ -18,8 +77,35 @@ class Mouse:
 		self._session_id = session_id
 		self._target_id = target_id
 
+	async def _show_visual_cursor(self, x: int, y: int, is_click: bool = False) -> None:
+		"""Show a visual cursor indicator at the given coordinates (headed mode only)."""
+		try:
+			if self._browser_session.browser_profile.headless:
+				return
+			# Inject the cursor overlay if not already present
+			await self._client.send.Runtime.evaluate(
+				params={'expression': _VISUAL_CURSOR_JS, 'returnByValue': True},
+				session_id=self._session_id,
+			)
+			# Move or click
+			if is_click:
+				await self._client.send.Runtime.evaluate(
+					params={'expression': f'window.__yetiClickEffect && window.__yetiClickEffect({x}, {y})', 'returnByValue': True},
+					session_id=self._session_id,
+				)
+			else:
+				await self._client.send.Runtime.evaluate(
+					params={'expression': f'window.__yetiMoveCursor && window.__yetiMoveCursor({x}, {y})', 'returnByValue': True},
+					session_id=self._session_id,
+				)
+		except Exception:
+			pass  # Visual cursor is non-critical
+
 	async def click(self, x: int, y: int, button: 'MouseButton' = 'left', click_count: int = 1) -> None:
 		"""Click at the specified coordinates."""
+		# Show visual cursor at click position
+		await self._show_visual_cursor(x, y, is_click=True)
+
 		# Mouse press
 		press_params: 'DispatchMouseEventParameters' = {
 			'type': 'mousePressed',
@@ -78,6 +164,9 @@ class Mouse:
 		"""Move mouse to the specified coordinates."""
 		# TODO: Implement smooth movement with multiple steps if needed
 		_ = steps  # Acknowledge parameter for future use
+
+		# Show visual cursor movement
+		await self._show_visual_cursor(x, y, is_click=False)
 
 		params: 'DispatchMouseEventParameters' = {'type': 'mouseMoved', 'x': x, 'y': y}
 		await self._client.send.Input.dispatchMouseEvent(params, session_id=self._session_id)
