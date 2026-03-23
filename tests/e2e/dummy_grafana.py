@@ -12,11 +12,10 @@ Run standalone:  python dummy_grafana.py
 Used by:         test_e2e_grafana.py
 """
 
-import json
 import math
 import random
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from threading import Thread
 
 from flask import Flask, jsonify, request
@@ -25,97 +24,97 @@ app = Flask(__name__)
 
 # ── Simulated metrics store ──────────────────────────────────────────
 METRICS = {
-    "cpu_usage": [],
-    "memory_usage": [],
-    "api_latency_ms": [],
-    "error_rate": [],
-    "requests_per_sec": [],
+	'cpu_usage': [],
+	'memory_usage': [],
+	'api_latency_ms': [],
+	'error_rate': [],
+	'requests_per_sec': [],
 }
 
 ALERTS = []
 ALERT_RULES = [
-    {"id": 1, "name": "High CPU", "metric": "cpu_usage", "threshold": 85, "severity": "critical", "enabled": True},
-    {"id": 2, "name": "High Memory", "metric": "memory_usage", "threshold": 90, "severity": "warning", "enabled": True},
-    {"id": 3, "name": "API Latency Spike", "metric": "api_latency_ms", "threshold": 500, "severity": "critical", "enabled": True},
-    {"id": 4, "name": "Error Rate High", "metric": "error_rate", "threshold": 5, "severity": "warning", "enabled": True},
+	{'id': 1, 'name': 'High CPU', 'metric': 'cpu_usage', 'threshold': 85, 'severity': 'critical', 'enabled': True},
+	{'id': 2, 'name': 'High Memory', 'metric': 'memory_usage', 'threshold': 90, 'severity': 'warning', 'enabled': True},
+	{'id': 3, 'name': 'API Latency Spike', 'metric': 'api_latency_ms', 'threshold': 500, 'severity': 'critical', 'enabled': True},
+	{'id': 4, 'name': 'Error Rate High', 'metric': 'error_rate', 'threshold': 5, 'severity': 'warning', 'enabled': True},
 ]
 
 START_TIME = time.time()
 
 
 def generate_metrics():
-    """Generate realistic metric data with occasional spikes."""
-    t = time.time() - START_TIME
-    ts = datetime.utcnow().isoformat() + "Z"
+	"""Generate realistic metric data with occasional spikes."""
+	t = time.time() - START_TIME
+	ts = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
 
-    # CPU: 30-70% baseline with occasional spikes to 90+
-    cpu = 45 + 20 * math.sin(t / 30) + random.gauss(0, 5)
-    if random.random() < 0.05:  # 5% chance of spike
-        cpu = random.uniform(88, 98)
-    cpu = max(0, min(100, cpu))
+	# CPU: 30-70% baseline with occasional spikes to 90+
+	cpu = 45 + 20 * math.sin(t / 30) + random.gauss(0, 5)
+	if random.random() < 0.05:  # 5% chance of spike
+		cpu = random.uniform(88, 98)
+	cpu = max(0, min(100, cpu))
 
-    # Memory: slowly climbing with sawtooth drops
-    mem = 55 + 15 * math.sin(t / 120) + (t % 300) / 30 + random.gauss(0, 3)
-    mem = max(0, min(100, mem))
+	# Memory: slowly climbing with sawtooth drops
+	mem = 55 + 15 * math.sin(t / 120) + (t % 300) / 30 + random.gauss(0, 3)
+	mem = max(0, min(100, mem))
 
-    # API latency: 100-300ms with occasional spikes
-    latency = 180 + 80 * math.sin(t / 20) + random.gauss(0, 30)
-    if random.random() < 0.03:
-        latency = random.uniform(500, 1200)
-    latency = max(10, latency)
+	# API latency: 100-300ms with occasional spikes
+	latency = 180 + 80 * math.sin(t / 20) + random.gauss(0, 30)
+	if random.random() < 0.03:
+		latency = random.uniform(500, 1200)
+	latency = max(10, latency)
 
-    # Error rate: 0-3% with occasional bursts
-    err = 1.5 + math.sin(t / 45) + random.gauss(0, 0.5)
-    if random.random() < 0.04:
-        err = random.uniform(5, 12)
-    err = max(0, err)
+	# Error rate: 0-3% with occasional bursts
+	err = 1.5 + math.sin(t / 45) + random.gauss(0, 0.5)
+	if random.random() < 0.04:
+		err = random.uniform(5, 12)
+	err = max(0, err)
 
-    # RPS: 200-800 with daily patterns
-    rps = 450 + 200 * math.sin(t / 60) + random.gauss(0, 30)
-    rps = max(50, rps)
+	# RPS: 200-800 with daily patterns
+	rps = 450 + 200 * math.sin(t / 60) + random.gauss(0, 30)
+	rps = max(50, rps)
 
-    point = {
-        "timestamp": ts,
-        "cpu_usage": round(cpu, 1),
-        "memory_usage": round(mem, 1),
-        "api_latency_ms": round(latency, 1),
-        "error_rate": round(err, 2),
-        "requests_per_sec": round(rps, 0),
-    }
+	point = {
+		'timestamp': ts,
+		'cpu_usage': round(cpu, 1),
+		'memory_usage': round(mem, 1),
+		'api_latency_ms': round(latency, 1),
+		'error_rate': round(err, 2),
+		'requests_per_sec': round(rps, 0),
+	}
 
-    for key in METRICS:
-        METRICS[key].append({"ts": ts, "value": point[key]})
-        if len(METRICS[key]) > 200:
-            METRICS[key] = METRICS[key][-200:]
+	for key in METRICS:
+		METRICS[key].append({'ts': ts, 'value': point[key]})
+		if len(METRICS[key]) > 200:
+			METRICS[key] = METRICS[key][-200:]
 
-    # Check alert rules
-    for rule in ALERT_RULES:
-        if not rule["enabled"]:
-            continue
-        val = point[rule["metric"]]
-        if val > rule["threshold"]:
-            alert = {
-                "id": len(ALERTS) + 1,
-                "rule_id": rule["id"],
-                "rule_name": rule["name"],
-                "metric": rule["metric"],
-                "value": val,
-                "threshold": rule["threshold"],
-                "severity": rule["severity"],
-                "status": "firing",
-                "triggered_at": ts,
-                "resolved_at": None,
-            }
-            ALERTS.append(alert)
+	# Check alert rules
+	for rule in ALERT_RULES:
+		if not rule['enabled']:
+			continue
+		val = point[rule['metric']]
+		if val > rule['threshold']:
+			alert = {
+				'id': len(ALERTS) + 1,
+				'rule_id': rule['id'],
+				'rule_name': rule['name'],
+				'metric': rule['metric'],
+				'value': val,
+				'threshold': rule['threshold'],
+				'severity': rule['severity'],
+				'status': 'firing',
+				'triggered_at': ts,
+				'resolved_at': None,
+			}
+			ALERTS.append(alert)
 
-    return point
+	return point
 
 
 def background_generator():
-    """Generate metrics every 2 seconds in background."""
-    while True:
-        generate_metrics()
-        time.sleep(2)
+	"""Generate metrics every 2 seconds in background."""
+	while True:
+		generate_metrics()
+		time.sleep(2)
 
 
 DASHBOARD_HTML = """<!DOCTYPE html>
@@ -364,110 +363,110 @@ timer = setInterval(fetchData, refreshInterval);
 </html>"""
 
 
-@app.route("/")
+@app.route('/')
 def dashboard():
-    return DASHBOARD_HTML
+	return DASHBOARD_HTML
 
 
-@app.route("/api/metrics/latest")
+@app.route('/api/metrics/latest')
 def metrics_latest():
-    point = generate_metrics()
-    return jsonify(point)
+	point = generate_metrics()
+	return jsonify(point)
 
 
-@app.route("/api/metrics/history")
+@app.route('/api/metrics/history')
 def metrics_history():
-    points = int(request.args.get("points", 50))
-    result = {}
-    for key, data in METRICS.items():
-        result[key] = data[-points:]
-    return jsonify(result)
+	points = int(request.args.get('points', 50))
+	result = {}
+	for key, data in METRICS.items():
+		result[key] = data[-points:]
+	return jsonify(result)
 
 
-@app.route("/api/alerts")
+@app.route('/api/alerts')
 def get_alerts():
-    limit = int(request.args.get("limit", 50))
-    return jsonify(ALERTS[-limit:][::-1])
+	limit = int(request.args.get('limit', 50))
+	return jsonify(ALERTS[-limit:][::-1])
 
 
-@app.route("/api/alerts/silence", methods=["POST"])
+@app.route('/api/alerts/silence', methods=['POST'])
 def silence_alerts():
-    for a in ALERTS:
-        if a["status"] == "firing":
-            a["status"] = "silenced"
-    return jsonify({"ok": True, "message": "All alerts silenced"})
+	for a in ALERTS:
+		if a['status'] == 'firing':
+			a['status'] = 'silenced'
+	return jsonify({'ok': True, 'message': 'All alerts silenced'})
 
 
-@app.route("/api/alerts/acknowledge", methods=["POST"])
+@app.route('/api/alerts/acknowledge', methods=['POST'])
 def acknowledge_alerts():
-    for a in ALERTS:
-        if a["status"] == "firing":
-            a["status"] = "resolved"
-            a["resolved_at"] = datetime.utcnow().isoformat() + "Z"
-    return jsonify({"ok": True, "message": "All alerts acknowledged"})
+	for a in ALERTS:
+		if a['status'] == 'firing':
+			a['status'] = 'resolved'
+			a['resolved_at'] = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+	return jsonify({'ok': True, 'message': 'All alerts acknowledged'})
 
 
-@app.route("/api/rules")
+@app.route('/api/rules')
 def get_rules():
-    return jsonify(ALERT_RULES)
+	return jsonify(ALERT_RULES)
 
 
-@app.route("/api/rules/<int:rule_id>/toggle", methods=["POST"])
+@app.route('/api/rules/<int:rule_id>/toggle', methods=['POST'])
 def toggle_rule(rule_id):
-    for r in ALERT_RULES:
-        if r["id"] == rule_id:
-            r["enabled"] = not r["enabled"]
-            return jsonify(r)
-    return jsonify({"error": "not found"}), 404
+	for r in ALERT_RULES:
+		if r['id'] == rule_id:
+			r['enabled'] = not r['enabled']
+			return jsonify(r)
+	return jsonify({'error': 'not found'}), 404
 
 
-@app.route("/api/rules/<int:rule_id>/threshold", methods=["POST"])
+@app.route('/api/rules/<int:rule_id>/threshold', methods=['POST'])
 def set_threshold(rule_id):
-    data = request.get_json()
-    for r in ALERT_RULES:
-        if r["id"] == rule_id:
-            r["threshold"] = data["threshold"]
-            return jsonify(r)
-    return jsonify({"error": "not found"}), 404
+	data = request.get_json()
+	for r in ALERT_RULES:
+		if r['id'] == rule_id:
+			r['threshold'] = data['threshold']
+			return jsonify(r)
+	return jsonify({'error': 'not found'}), 404
 
 
-@app.route("/api/simulate/spike", methods=["POST"])
+@app.route('/api/simulate/spike', methods=['POST'])
 def simulate_spike():
-    """Inject a CPU spike to trigger alerts."""
-    ts = datetime.utcnow().isoformat() + "Z"
-    spike_val = random.uniform(92, 99)
-    METRICS["cpu_usage"].append({"ts": ts, "value": round(spike_val, 1)})
-    alert = {
-        "id": len(ALERTS) + 1,
-        "rule_id": 1,
-        "rule_name": "High CPU",
-        "metric": "cpu_usage",
-        "value": round(spike_val, 1),
-        "threshold": 85,
-        "severity": "critical",
-        "status": "firing",
-        "triggered_at": ts,
-        "resolved_at": None,
-    }
-    ALERTS.append(alert)
-    return jsonify({"ok": True, "spike_value": spike_val, "alert": alert})
+	"""Inject a CPU spike to trigger alerts."""
+	ts = datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+	spike_val = random.uniform(92, 99)
+	METRICS['cpu_usage'].append({'ts': ts, 'value': round(spike_val, 1)})
+	alert = {
+		'id': len(ALERTS) + 1,
+		'rule_id': 1,
+		'rule_name': 'High CPU',
+		'metric': 'cpu_usage',
+		'value': round(spike_val, 1),
+		'threshold': 85,
+		'severity': 'critical',
+		'status': 'firing',
+		'triggered_at': ts,
+		'resolved_at': None,
+	}
+	ALERTS.append(alert)
+	return jsonify({'ok': True, 'spike_value': spike_val, 'alert': alert})
 
 
-@app.route("/api/health")
+@app.route('/api/health')
 def health():
-    return jsonify({"status": "healthy", "uptime": round(time.time() - START_TIME, 1)})
+	return jsonify({'status': 'healthy', 'uptime': round(time.time() - START_TIME, 1)})
 
 
 def run_server(port=3000):
-    # Start background metric generator
-    t = Thread(target=background_generator, daemon=True)
-    t.start()
-    # Pre-generate some history
-    for _ in range(30):
-        generate_metrics()
-    app.run(host="127.0.0.1", port=port, debug=False, use_reloader=False)
+	# Start background metric generator
+	t = Thread(target=background_generator, daemon=True)
+	t.start()
+	# Pre-generate some history
+	for _ in range(30):
+		generate_metrics()
+	app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False)
 
 
-if __name__ == "__main__":
-    print("Starting Grafana-like monitoring dashboard on http://localhost:3000")
-    run_server(3000)
+if __name__ == '__main__':
+	print('Starting Grafana-like monitoring dashboard on http://localhost:3000')
+	run_server(3000)

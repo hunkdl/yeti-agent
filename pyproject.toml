@@ -148,6 +148,7 @@ exclude = [
     "debug/*",
     "tests/scripts/*",
     "tests/old/*",
+    "tests/e2e/*",
     "browser_use/dom/playground/*",
     "examples/use-cases/onepassword.py",
     "browser_use/llm/oci_raw/*",

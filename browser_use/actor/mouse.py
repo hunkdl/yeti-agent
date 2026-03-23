@@ -1,7 +1,5 @@
 """Mouse class for mouse operations."""
 
-import logging
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -9,8 +7,6 @@ if TYPE_CHECKING:
 	from cdp_use.cdp.input.types import MouseButton
 
 	from browser_use.browser.session import BrowserSession
-
-logger = logging.getLogger(__name__)
 
 # JavaScript to inject a visual cursor overlay into the page
 _VISUAL_CURSOR_JS = r"""
@@ -90,7 +86,10 @@ class Mouse:
 			# Move or click
 			if is_click:
 				await self._client.send.Runtime.evaluate(
-					params={'expression': f'window.__yetiClickEffect && window.__yetiClickEffect({x}, {y})', 'returnByValue': True},
+					params={
+						'expression': f'window.__yetiClickEffect && window.__yetiClickEffect({x}, {y})',
+						'returnByValue': True,
+					},
 					session_id=self._session_id,
 				)
 			else:
